@@ -6,7 +6,7 @@ import { Presets } from 'react-native-pulsar';
 import { Pressable } from '@/components/pressable';
 import { useMealFlowStore } from '@/features/mealflow/store/mealflow-store';
 import type { DeliveryStop, StopStatus } from '@/features/mealflow/types/mealflow';
-import { Href, router, useNavigation } from 'expo-router';
+import { router, useNavigation, type Href } from 'expo-router';
 
 const statusLabel: Record<StopStatus, string> = { delivered: 'Delivered', enRoute: 'En route', delayed: 'Delayed', open: 'Open' };
 const statusColor: Record<StopStatus, string> = { delivered: 'text-success', enRoute: 'text-info', delayed: 'text-warning', open: 'text-muted' };
@@ -56,7 +56,7 @@ export default function DeliveriesScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-4 pb-safe-offset-28 gap-3" showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-4 pb-safe-offset-28 gap-3" showsVerticalScrollIndicator={false} scrollIndicatorInsets={{ bottom: 104 }}>
       <View className="flex-row items-center gap-3">
         <View className="flex-1 gap-1">
           <Text className="text-lg font-semibold text-foreground">Today’s Deliveries</Text>

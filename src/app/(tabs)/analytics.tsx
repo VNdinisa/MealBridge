@@ -34,7 +34,7 @@ export default function AnalyticsScreen() {
   ];
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-4 pb-safe-offset-28 gap-3" showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-4 pb-safe-offset-28 gap-3" showsVerticalScrollIndicator={false} scrollIndicatorInsets={{ bottom: 104 }}>
       <Text className="text-2xl font-bold text-foreground">Analytics</Text>
       <Text className="text-sm text-muted">Riverside Community Meals · Dispatch snapshot</Text>
       <View className="flex-row gap-2">{(['7D', '30D', '90D', 'All'] as Period[]).map((value) => <Pressable key={value} onPress={() => setPeriod(value)} className={`flex-1 items-center rounded-full border py-2 ${period === value ? 'border-accent bg-accent' : 'border-border bg-surface'}`}><Text className={`text-xs ${period === value ? 'font-bold text-background' : 'text-muted'}`}>{value}</Text></Pressable>)}</View>

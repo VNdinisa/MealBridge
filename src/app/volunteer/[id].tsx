@@ -1,4 +1,4 @@
-import { Href, useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, type Href } from 'expo-router';
 import { ScrollView, Text, View } from 'react-native';
 
 import { Pressable } from '@/components/pressable';

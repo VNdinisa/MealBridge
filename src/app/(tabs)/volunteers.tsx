@@ -3,10 +3,11 @@ import { ScrollView, Text, View } from 'react-native';
 import { Pressable } from '@/components/pressable';
 import { useMealFlowStore } from '@/features/mealflow/store/mealflow-store';
 import type { Volunteer, VolunteerStatus } from '@/features/mealflow/types/mealflow';
-import { Href, router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 
-function VolunteerCard({ volunteer, stopsOpen }: { volunteer: Volunteer; stopsOpen: number }) {
+function VolunteerCard({ volunteer, stopsOpen, affectedStops }: { volunteer: Volunteer; stopsOpen: number; affectedStops: { id: string; number: number; recipient: string }[] }) {
   const setAvailability = useMealFlowStore((state) => state.setAvailability);
+  const setStopOwner = useMealFlowStore((state) => state.reassignStop);
   const statuses: VolunteerStatus[] = ['available', 'onRoute', 'unavailable'];
   const nextStatus: VolunteerStatus = volunteer.status === 'available' ? 'unavailable' : 'available';
   const label = volunteer.status === 'onRoute' ? 'On Route' : volunteer.status === 'available' ? 'Available' : 'Unavailable';
@@ -21,6 +22,7 @@ function VolunteerCard({ volunteer, stopsOpen }: { volunteer: Volunteer; stopsOp
       <View className="flex-row gap-2">
         {statuses.map((status) => <Pressable key={status} onPress={() => setAvailability(volunteer.id, status)} className={`flex-1 items-center rounded-xl border py-2 ${volunteer.status === status ? 'border-accent bg-accent' : 'border-border bg-background'}`}><Text className={`text-xs ${volunteer.status === status ? 'font-bold text-background' : 'text-muted'}`}>{status === 'onRoute' ? 'On Route' : status[0].toUpperCase() + status.slice(1)}</Text></Pressable>)}
       </View>
+      {volunteer.status === 'unavailable' && affectedStops.length > 0 ? <View className="gap-2 rounded-xl border border-warning p-3"><Text className="text-xs font-semibold text-warning">Reassign {affectedStops.length} open stop{affectedStops.length === 1 ? '' : 's'} from {volunteer.name}</Text>{affectedStops.map((stop) => <View key={stop.id} className="flex-row items-center justify-between gap-2"><Text className="flex-1 text-xs text-foreground">{stop.number}. {stop.recipient}</Text><Pressable onPress={() => setStopOwner(stop.id, null)} className="rounded-full border border-warning px-3 py-2"><Text className="text-xs text-warning">Unassign</Text></Pressable></View>)}</View> : null}
     </View>
   );
 }
@@ -40,7 +42,7 @@ export default function VolunteersScreen() {
   const roster = [...volunteers].sort((a, b) => a.status === 'unavailable' ? 1 : b.status === 'unavailable' ? -1 : a.name.localeCompare(b.name));
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-4 pb-safe-offset-28 gap-3" showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-4 pb-safe-offset-28 gap-3" showsVerticalScrollIndicator={false} scrollIndicatorInsets={{ bottom: 104 }}>
       <Text className="text-2xl font-bold text-foreground">Volunteers</Text>
       <Text className="text-sm text-muted">Riverside Community Meals · Tuesday shift</Text>
       <View className="flex-row gap-2">
@@ -49,7 +51,7 @@ export default function VolunteersScreen() {
       {unassigned > 0 ? <Pressable onPress={() => router.navigate('/')} className="flex-row items-center justify-between rounded-2xl border border-warning bg-surface p-3"><View className="gap-1"><Text className="text-sm font-bold text-warning">{unassigned} unassigned stop{unassigned === 1 ? '' : 's'} need an owner</Text><Text className="text-xs text-muted">Open the stop to assign an available volunteer.</Text></View><Text className="text-lg text-warning">›</Text></Pressable> : null}
       {lisa ? <View className="gap-2 rounded-3xl border-2 border-success bg-surface p-4"><Text className="text-xs font-bold text-success">ON-CALL VOLUNTEER</Text><Text className="text-xl font-semibold text-foreground">{lisa.name}</Text><Text className="text-sm text-muted">{lisaStops} open stops · {lisa.status === 'unavailable' ? 'Unavailable' : lisa.status === 'available' ? 'Available for assignment' : lisa.route}</Text><View className="flex-row gap-2"><Pressable onPress={() => changeStatus(lisa.id, 'available')} className="flex-1 items-center rounded-full bg-accent py-2"><Text className="text-sm font-bold text-background">Available</Text></Pressable><Pressable onPress={() => changeStatus(lisa.id, 'unavailable')} className="flex-1 items-center rounded-full border border-border py-2"><Text className="text-sm font-semibold text-foreground">Unavailable</Text></Pressable></View></View> : null}
       <View className="flex-row items-center justify-between"><Text className="text-lg font-semibold text-foreground">Today’s Team</Text><Text className="text-xs text-muted">{volunteers.length} volunteers</Text></View>
-      {roster.map((volunteer) => <VolunteerCard key={volunteer.id} volunteer={volunteer} stopsOpen={stops.filter((stop) => stop.ownerId === volunteer.id && stop.status !== 'delivered').length} />)}
+      {roster.map((volunteer) => <VolunteerCard key={volunteer.id} volunteer={volunteer} stopsOpen={stops.filter((stop) => stop.ownerId === volunteer.id && stop.status !== 'delivered').length} affectedStops={stops.filter((stop) => stop.ownerId === volunteer.id && stop.status !== 'delivered')} />)}
       <View className="gap-2 rounded-2xl border border-border bg-surface p-3"><Text className="text-sm font-semibold text-foreground">Coverage check</Text><Text className="text-xs text-muted">{ownedOpen} open stops have an owner. {unassigned} need dispatcher attention.</Text><Text className="text-xs text-muted">Set a volunteer unavailable, then reassign their open stops from each stop’s details.</Text></View>
     </ScrollView>
   );
