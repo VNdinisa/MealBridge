@@ -66,7 +66,7 @@ export const useMealFlowStore = create<MealFlowState>()(persist((set) => ({
     const update: VoiceUpdate = { id: `u${Date.now()}`, transcript, stopId, time, outcome: `Updated ${stop?.recipient ?? 'stop'}` };
     return {
       stops: state.stops.map((item) => item.id === stopId ? {
-        ...item, status, contact: status === 'delivered' ? 'Reached · delivered' : status === 'delayed' ? 'Reached · running late' : item.contact,
+        ...item, status, contact: status === 'delivered' ? 'Reached · delivered' : status === 'delayed' ? 'Reached · running late' : status === 'enRoute' ? 'Reached · on the way' : 'No answer · follow up',
         updatedAt: time, note,
       } : item),
       updates: [update, ...state.updates],

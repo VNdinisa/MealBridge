@@ -35,7 +35,7 @@ export default function VoiceScreen() {
   const statusName = (value: StopStatus) => value === 'enRoute' ? 'En route' : value[0].toUpperCase() + value.slice(1);
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-2 pb-safe-offset-22 gap-3" showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-4 pb-safe-offset-28 gap-3" showsVerticalScrollIndicator={false}>
       <Text className="text-2xl font-bold text-foreground">Voice Hub</Text>
       <Text className="text-sm text-muted">Turn a shift update into a reviewed stop change.</Text>
       <View className="flex-row items-center gap-3 rounded-3xl border border-info bg-surface p-4"><View className="size-12 items-center justify-center rounded-full bg-info"><Text className="text-xl">🎙</Text></View><View className="flex-1 gap-1"><Text className="text-base font-semibold text-foreground">Quick update</Text><Text className="text-xs text-muted">Choose a phrase or type what you heard. Confirm before any stop changes.</Text></View></View>

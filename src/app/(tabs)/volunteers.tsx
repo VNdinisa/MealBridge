@@ -40,7 +40,7 @@ export default function VolunteersScreen() {
   const roster = [...volunteers].sort((a, b) => a.status === 'unavailable' ? 1 : b.status === 'unavailable' ? -1 : a.name.localeCompare(b.name));
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-2 pb-safe-offset-22 gap-3" showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-4 pb-safe-offset-28 gap-3" showsVerticalScrollIndicator={false}>
       <Text className="text-2xl font-bold text-foreground">Volunteers</Text>
       <Text className="text-sm text-muted">Riverside Community Meals · Tuesday shift</Text>
       <View className="flex-row gap-2">

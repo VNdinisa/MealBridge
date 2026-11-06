@@ -56,7 +56,7 @@ export default function DeliveriesScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-2 pb-safe-offset-22 gap-3" showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-4 pb-safe-offset-28 gap-3" showsVerticalScrollIndicator={false}>
       <View className="flex-row items-center gap-3">
         <View className="flex-1 gap-1">
           <Text className="text-lg font-semibold text-foreground">Today’s Deliveries</Text>
