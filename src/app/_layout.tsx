@@ -83,7 +83,11 @@ export default function RootLayout() {
             {/* ThemeSwitchHost is always mounted (zero cost when unused) so any theme
                 toggle switches via useThemeSwitch() and the circular reveal plays. */}
             <ThemeSwitchHost>
-              <Stack screenOptions={{ headerShown: false }} />
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="stop/[id]" options={{ headerShown: false }} />
+                <Stack.Screen name="volunteer/[id]" options={{ headerShown: false }} />
+              </Stack>
             </ThemeSwitchHost>
           </ThemeProvider>
         </HeroUINativeProvider>
