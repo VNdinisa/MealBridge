@@ -79,6 +79,36 @@ def transition_stop(
     """Execute a state transition on a stop, enforcing invariants and returning an audit event."""
     from_status = stop.status
 
+    # Idempotent transition check: if already in target state, gracefully allow update without error
+    if from_status == to_status:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        prev_owner = stop.current_owner_id
+        if new_owner_id and stop.current_owner_id != new_owner_id:
+            stop.current_owner_id = new_owner_id
+        if contact_status:
+            stop.contact_status = contact_status
+        if delivery_outcome:
+            stop.delivery_outcome = delivery_outcome
+        if contact_outcome:
+            stop.contact_outcome = contact_outcome
+        stop.updated_at = now_iso
+        validate_single_ownership(stop)
+
+        event = DispatchEvent(
+            event_id=f"evt_{uuid.uuid4().hex[:10]}",
+            stop_id=stop.stop_id,
+            from_status=from_status,
+            to_status=to_status,
+            actor=actor,
+            reason=reason,
+            source_update_id=source_update_id,
+            previous_owner_id=prev_owner,
+            new_owner_id=new_owner_id if new_owner_id != prev_owner else None,
+            timestamp=now_iso,
+            metadata=metadata or {},
+        )
+        return stop, event
+
     # Check allowed transitions
     allowed = ALLOWED_TRANSITIONS.get(from_status, set())
     if to_status not in allowed:
