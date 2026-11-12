@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import tempfile
 from pathlib import Path
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -34,18 +35,32 @@ from scripts.check_data import audit_seed_data
 app = FastAPI(title="MealBridge Dispatcher Hub", version="1.0.0")
 
 BASE_DIR = Path(__file__).resolve().parent
+ROOT_DIR = BASE_DIR.parent.parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
-DB_PATH = Path("mealbridge.db")
-UPLOAD_DIR = Path("data/uploads")
+# Serverless (Vercel) vs Local / Cloud Run filesystem handling
+IS_SERVERLESS = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
+if IS_SERVERLESS:
+    DB_PATH = Path(tempfile.gettempdir()) / "mealbridge.db"
+    UPLOAD_DIR = Path(tempfile.gettempdir()) / "uploads"
+else:
+    DB_PATH = ROOT_DIR / "mealbridge.db"
+    UPLOAD_DIR = ROOT_DIR / "data" / "uploads"
+
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-# Initialize on startup if not present
-if not DB_PATH.exists():
-    init_db(DB_PATH)
-    load_seed_data(DB_PATH)
+# Resolve seed files path reliably
+SEED_VOLUNTEERS = ROOT_DIR / "data" / "seed" / "volunteers.json"
+SEED_STOPS = ROOT_DIR / "data" / "seed" / "stops.json"
+
+def ensure_db():
+    if not DB_PATH.exists():
+        init_db(DB_PATH)
+        load_seed_data(DB_PATH, SEED_VOLUNTEERS, SEED_STOPS)
+
+ensure_db()
 
 # Global in-memory cache for pending proposals
 PENDING_PROPOSALS: dict[str, Any] = {}
@@ -85,7 +100,7 @@ async def reset_db():
     PENDING_PROPOSALS.clear()
     LAST_PARSE.clear()
     init_db(DB_PATH)
-    load_seed_data(DB_PATH)
+    load_seed_data(DB_PATH, SEED_VOLUNTEERS, SEED_STOPS)
     return JSONResponse({"status": "reset_successful", "message": "Database reset to initial state."})
 
 
@@ -277,5 +292,5 @@ async def simulate_delivery(stop_id: str):
 @app.get("/api/audit")
 async def run_audit():
     """Run data quality auditor live."""
-    report = audit_seed_data()
+    report = audit_seed_data(SEED_VOLUNTEERS, SEED_STOPS)
     return JSONResponse(report)
