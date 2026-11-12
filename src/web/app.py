@@ -30,7 +30,7 @@ from src.lifecycle.database import (
     update_volunteer_capacity,
 )
 from src.lifecycle.state_machine import transition_stop
-from scripts.check_data import audit_seed_data
+from src.lifecycle.auditor import audit_seed_data
 
 app = FastAPI(title="MealBridge Dispatcher Hub", version="1.0.0")
 
@@ -98,6 +98,24 @@ async def health():
         "serverless": IS_SERVERLESS,
         "db_path": str(DB_PATH),
     })
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch-all exception handler to return readable diagnostics."""
+    import traceback
+    err = traceback.format_exc()
+    print(f"Unhandled Exception: {err}")
+    return HTMLResponse(
+        content=f"""
+        <div style="font-family:sans-serif;padding:24px;background:#fef2f2;border:1px solid #f87171;border-radius:8px;max-width:800px;margin:40px auto;">
+            <h2 style="color:#b91c1c;margin-top:0;">MealBridge Internal Error</h2>
+            <p style="color:#7f1d1d;">An unhandled error occurred while processing this request:</p>
+            <pre style="background:#450a0a;color:#fecaca;padding:12px;border-radius:6px;overflow-x:auto;">{err}</pre>
+        </div>
+        """,
+        status_code=500,
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
