@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from src.models.entities import DeliveryWindow, DispatchEvent, Stop, VoiceUpdate, Volunteer
+from src.lifecycle.default_data import DEFAULT_STOPS, DEFAULT_VOLUNTEERS
 
 
 def get_connection(db_path: str | Path = "mealbridge.db") -> sqlite3.Connection:
@@ -100,16 +101,39 @@ def init_db(db_path: str | Path = "mealbridge.db") -> None:
 
 def load_seed_data(
     db_path: str | Path = "mealbridge.db",
-    volunteers_json: str | Path = "data/seed/volunteers.json",
-    stops_json: str | Path = "data/seed/stops.json",
+    volunteers_json: str | Path | list[dict] = "data/seed/volunteers.json",
+    stops_json: str | Path | list[dict] = "data/seed/stops.json",
 ) -> tuple[int, int]:
-    """Load JSON seed data into SQLite."""
+    """Load seed data into SQLite with graceful in-memory fallback."""
     init_db(db_path)
 
-    with open(volunteers_json, "r", encoding="utf-8") as f:
-        vols_data = json.load(f)
-    with open(stops_json, "r", encoding="utf-8") as f:
-        stops_data = json.load(f)
+    vols_data = None
+    stops_data = None
+
+    if isinstance(volunteers_json, list):
+        vols_data = volunteers_json
+    else:
+        try:
+            p = Path(volunteers_json)
+            if p.exists():
+                with open(p, "r", encoding="utf-8") as f:
+                    vols_data = json.load(f)
+        except Exception:
+            pass
+
+    if isinstance(stops_json, list):
+        stops_data = stops_json
+    else:
+        try:
+            p = Path(stops_json)
+            if p.exists():
+                with open(p, "r", encoding="utf-8") as f:
+                    stops_data = json.load(f)
+        except Exception:
+            pass
+
+    vols_data = vols_data or DEFAULT_VOLUNTEERS
+    stops_data = stops_data or DEFAULT_STOPS
 
     with get_connection(db_path) as conn:
         cursor = conn.cursor()

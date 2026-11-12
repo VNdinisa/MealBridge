@@ -41,6 +41,14 @@ def test_voice_intake_and_proposals_api(client):
     assert app_data["escalated_count"] >= 2
 
 
+def test_health_check(client):
+    res = client.get("/api/health")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "healthy"
+    assert data["service"] == "MealBridge"
+
+
 def test_audit_api_returns_pass(client):
     res = client.get("/api/audit")
     assert res.status_code == 200

@@ -36,12 +36,26 @@ app = FastAPI(title="MealBridge Dispatcher Hub", version="1.0.0")
 
 BASE_DIR = Path(__file__).resolve().parent
 ROOT_DIR = BASE_DIR.parent.parent
-TEMPLATES_DIR = BASE_DIR / "templates"
-TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
+
+# Resolve template directory across standard and serverless deployment layouts
+possible_template_dirs = [
+    BASE_DIR / "templates",
+    ROOT_DIR / "src" / "web" / "templates",
+    Path("src/web/templates"),
+    Path("/var/task/src/web/templates"),
+]
+TEMPLATES_DIR = next((d for d in possible_template_dirs if d.exists()), BASE_DIR / "templates")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Serverless (Vercel) vs Local / Cloud Run filesystem handling
-IS_SERVERLESS = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
+IS_SERVERLESS = bool(
+    os.getenv("VERCEL")
+    or os.getenv("VERCEL_ENV")
+    or os.getenv("AWS_LAMBDA_FUNCTION_NAME")
+    or os.getenv("LAMBDA_TASK_ROOT")
+    or not os.access(str(ROOT_DIR), os.W_OK)
+)
+
 if IS_SERVERLESS:
     DB_PATH = Path(tempfile.gettempdir()) / "mealbridge.db"
     UPLOAD_DIR = Path(tempfile.gettempdir()) / "uploads"
@@ -49,16 +63,24 @@ else:
     DB_PATH = ROOT_DIR / "mealbridge.db"
     UPLOAD_DIR = ROOT_DIR / "data" / "uploads"
 
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
 
 # Resolve seed files path reliably
 SEED_VOLUNTEERS = ROOT_DIR / "data" / "seed" / "volunteers.json"
 SEED_STOPS = ROOT_DIR / "data" / "seed" / "stops.json"
 
+
 def ensure_db():
-    if not DB_PATH.exists():
-        init_db(DB_PATH)
-        load_seed_data(DB_PATH, SEED_VOLUNTEERS, SEED_STOPS)
+    try:
+        if not DB_PATH.exists():
+            init_db(DB_PATH)
+            load_seed_data(DB_PATH, SEED_VOLUNTEERS, SEED_STOPS)
+    except Exception as e:
+        print(f"Warning during DB ensure: {e}")
+
 
 ensure_db()
 
@@ -67,8 +89,20 @@ PENDING_PROPOSALS: dict[str, Any] = {}
 LAST_PARSE: dict[str, Any] = {}
 
 
+@app.get("/api/health")
+async def health():
+    """Lightweight server health probe."""
+    return JSONResponse({
+        "status": "healthy",
+        "service": "MealBridge",
+        "serverless": IS_SERVERLESS,
+        "db_path": str(DB_PATH),
+    })
+
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
+    ensure_db()
     stops_by_owner = open_stops_by_owner(DB_PATH)
     volunteers = list_volunteers(DB_PATH)
     all_stops = list_stops(DB_PATH)
@@ -77,20 +111,36 @@ async def dashboard(request: Request):
     escalated_count = sum(1 for s in all_stops if s.status == "needs_escalation")
     closed_count = sum(1 for s in all_stops if s.status == "closed")
 
-    return templates.TemplateResponse(
-        request=request,
-        name="index.html",
-        context={
-            "stops_by_owner": stops_by_owner,
-            "volunteers": volunteers,
-            "total_stops": total_stops,
-            "at_risk_count": at_risk_count,
-            "escalated_count": escalated_count,
-            "closed_count": closed_count,
-            "last_parse": LAST_PARSE,
-            "pending_proposals": list(PENDING_PROPOSALS.values()),
-        },
-    )
+    ctx = {
+        "stops_by_owner": stops_by_owner,
+        "volunteers": volunteers,
+        "total_stops": total_stops,
+        "at_risk_count": at_risk_count,
+        "escalated_count": escalated_count,
+        "closed_count": closed_count,
+        "last_parse": LAST_PARSE,
+        "pending_proposals": list(PENDING_PROPOSALS.values()),
+    }
+
+    try:
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context=ctx,
+        )
+    except Exception:
+        # Resilient fallback if Jinja directory loader failed in serverless bundle
+        for candidate in [
+            TEMPLATES_DIR / "index.html",
+            BASE_DIR / "templates" / "index.html",
+            ROOT_DIR / "src" / "web" / "templates" / "index.html",
+            Path("src/web/templates/index.html"),
+        ]:
+            if candidate.exists():
+                from jinja2 import Template
+                tmpl = Template(candidate.read_text(encoding="utf-8"))
+                return HTMLResponse(tmpl.render(request=request, **ctx))
+        raise
 
 
 @app.post("/api/reset")
