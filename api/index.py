@@ -1,9 +1,8 @@
-"""Vercel Diagnostic Entrypoint for MealBridge."""
+"""Vercel Serverless Entrypoint for MealBridge."""
 
 import os
 import sys
 from pathlib import Path
-from fastapi import FastAPI
 
 # Mark serverless environment
 os.environ["VERCEL"] = "1"
@@ -16,23 +15,7 @@ for p in [str(ROOT_DIR), str(SRC_DIR)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-app = FastAPI()
+from src.web.app import app
 
-
-@app.get("/")
-async def root():
-    try:
-        from src.web.app import dashboard
-        from fastapi import Request
-        return {"status": "ok", "message": "MealBridge diagnostic probe alive"}
-    except Exception:
-        import traceback
-        return {"status": "error", "traceback": traceback.format_exc()}
-
-
-@app.get("/test")
-async def test():
-    return {"status": "ok", "python_version": sys.version}
-
-
+# Expose app and handler for Vercel ASGI runtime
 handler = app
