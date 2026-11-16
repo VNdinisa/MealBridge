@@ -16,3 +16,12 @@ for p in [str(ROOT_DIR), str(SRC_DIR)]:
         sys.path.insert(0, p)
 
 from src.web.app import app
+
+
+@app.get("/api/ping")
+def ping():
+    return {"ping": "pong"}
+
+
+# Alias for Vercel serverless functions
+handler = app
