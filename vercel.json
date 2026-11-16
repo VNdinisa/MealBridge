@@ -1,14 +1,4 @@
 {
-  "version": 2,
-  "functions": {
-    "api/index.py": {
-      "includeFiles": [
-        "src/**",
-        "data/**",
-        "scripts/**"
-      ]
-    }
-  },
   "rewrites": [
     {
       "source": "/(.*)",
