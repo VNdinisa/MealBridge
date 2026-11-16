@@ -87,8 +87,6 @@ def ensure_db():
         print(f"Warning during DB ensure: {e}")
 
 
-ensure_db()
-
 # Global in-memory cache for pending proposals
 PENDING_PROPOSALS: dict[str, Any] = {}
 LAST_PARSE: dict[str, Any] = {}
@@ -98,6 +96,7 @@ LAST_PARSE: dict[str, Any] = {}
 @app.get("/health")
 async def health():
     """Lightweight server health probe."""
+    ensure_db()
     return JSONResponse({
         "status": "healthy",
         "service": "MealBridge",
@@ -177,6 +176,7 @@ async def voice_intake(
     use_gemini: bool = Form(False),
 ):
     """Process uploaded audio or transcribed voice note."""
+    ensure_db()
     global LAST_PARSE, PENDING_PROPOSALS
     PENDING_PROPOSALS.clear()
 
@@ -259,6 +259,7 @@ async def voice_intake(
 @app.post("/api/approve-all")
 async def approve_all_proposals():
     """1-Click Dispatcher Approval for all pending proposals."""
+    ensure_db()
     global PENDING_PROPOSALS
     if not PENDING_PROPOSALS:
         return JSONResponse({"status": "no_proposals", "message": "No pending proposals to approve."})
@@ -307,6 +308,7 @@ async def approve_all_proposals():
 @app.post("/api/simulate-delivery/{stop_id}")
 async def simulate_delivery(stop_id: str):
     """Simulate delivery + welfare check outcome and close the stop."""
+    ensure_db()
     stop = get_stop(DB_PATH, stop_id)
     if not stop:
         return JSONResponse({"error": "Stop not found"}, status_code=404)
@@ -358,5 +360,6 @@ async def simulate_delivery(stop_id: str):
 @app.get("/api/audit")
 async def run_audit():
     """Run data quality auditor live."""
+    ensure_db()
     report = audit_seed_data(SEED_VOLUNTEERS, SEED_STOPS)
     return JSONResponse(report)
