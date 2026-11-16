@@ -29,8 +29,13 @@ from src.lifecycle.database import (
     save_stop,
     update_volunteer_capacity,
 )
+from jinja2 import Template
 from src.lifecycle.state_machine import transition_stop
 from src.lifecycle.auditor import audit_seed_data
+from src.web.embedded_template import INDEX_HTML_TEMPLATE
+
+# Pre-compiled in-memory template (guarantees zero-disk dependency on Vercel / serverless)
+_EMBEDDED_JINJA_TMPL = Template(INDEX_HTML_TEMPLATE)
 
 app = FastAPI(title="MealBridge Dispatcher Hub", version="1.0.0")
 
@@ -90,6 +95,7 @@ LAST_PARSE: dict[str, Any] = {}
 
 
 @app.get("/api/health")
+@app.get("/health")
 async def health():
     """Lightweight server health probe."""
     return JSONResponse({
@@ -119,6 +125,8 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 @app.get("/", response_class=HTMLResponse)
+@app.get("/api", response_class=HTMLResponse)
+@app.get("/api/index.py", response_class=HTMLResponse)
 async def dashboard(request: Request):
     ensure_db()
     stops_by_owner = open_stops_by_owner(DB_PATH)
@@ -147,18 +155,8 @@ async def dashboard(request: Request):
             context=ctx,
         )
     except Exception:
-        # Resilient fallback if Jinja directory loader failed in serverless bundle
-        for candidate in [
-            TEMPLATES_DIR / "index.html",
-            BASE_DIR / "templates" / "index.html",
-            ROOT_DIR / "src" / "web" / "templates" / "index.html",
-            Path("src/web/templates/index.html"),
-        ]:
-            if candidate.exists():
-                from jinja2 import Template
-                tmpl = Template(candidate.read_text(encoding="utf-8"))
-                return HTMLResponse(tmpl.render(request=request, **ctx))
-        raise
+        # Guaranteed in-memory fallback template with zero disk dependency
+        return HTMLResponse(_EMBEDDED_JINJA_TMPL.render(request=request, **ctx))
 
 
 @app.post("/api/reset")

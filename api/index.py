@@ -11,15 +11,16 @@ os.environ["VERCEL"] = "1"
 # Add project root and src to sys.path
 ROOT_DIR = Path(__file__).resolve().parent.parent
 SRC_DIR = ROOT_DIR / "src"
+CWD = Path.cwd()
 
-for p in [ROOT_DIR, SRC_DIR]:
+for p in [CWD, ROOT_DIR, SRC_DIR, Path(__file__).resolve().parent]:
     p_str = str(p)
     if p_str not in sys.path:
         sys.path.insert(0, p_str)
 
 try:
     from src.web.app import app
-except Exception:
+except BaseException:
     startup_error = traceback.format_exc()
     from fastapi import FastAPI
     from fastapi.responses import HTMLResponse
