@@ -1,1 +1,0 @@
-Run the noon cancellation drill using the noon-cancellation-drill skill. Report pass/fail per step with the event timeline, then invoke the data-quality-auditor and dispatcher-lens subagents on the result.
