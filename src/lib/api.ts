@@ -1,6 +1,13 @@
 import { storage } from './storage';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+function resolveApiBaseUrl(): string {
+  if (typeof window !== 'undefined' && window.location?.hostname?.endsWith('.app.github.dev')) {
+    return `${window.location.protocol}//${window.location.hostname.replace('-8081.', '-8000.')}`;
+  }
+  return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 export type UserRole = 'dispatcher' | 'volunteer' | 'admin';
 
