@@ -4,6 +4,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { Presets } from 'react-native-pulsar';
 
 import { Pressable } from '@/components/pressable';
+import { OnboardingCard } from '@/features/mealflow/components/onboarding-card';
 import { useMealFlowStore } from '@/features/mealflow/store/mealflow-store';
 import type { DeliveryStop, StopStatus } from '@/features/mealflow/types/mealflow';
 import { router, useNavigation, type Href } from 'expo-router';
@@ -30,6 +31,8 @@ function StopCard({ stop, ownerName }: { stop: DeliveryStop; ownerName: string }
 }
 
 export default function DeliveriesScreen() {
+  const onboardingComplete = useMealFlowStore((state) => state.onboardingComplete);
+  const completeOnboarding = useMealFlowStore((state) => state.completeOnboarding);
   const stops = useMealFlowStore((state) => state.stops);
   const volunteers = useMealFlowStore((state) => state.volunteers);
   const [filter, setFilter] = useState<StopStatus | 'all'>('all');
@@ -54,6 +57,8 @@ export default function DeliveriesScreen() {
     setStopStatus(next.id, 'delivered');
     Presets.System.notificationSuccess();
   };
+
+  if (!onboardingComplete) return <OnboardingCard onFinish={completeOnboarding} />;
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerClassName="px-4 pt-safe-offset-4 pb-safe-offset-28 gap-3" showsVerticalScrollIndicator={false} scrollIndicatorInsets={{ bottom: 104 }}>

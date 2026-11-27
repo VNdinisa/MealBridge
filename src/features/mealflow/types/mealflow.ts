@@ -36,6 +36,8 @@ export interface VoiceUpdate {
 }
 
 export interface MealFlowState {
+  onboardingComplete: boolean;
+  completeOnboarding: () => void;
   stops: DeliveryStop[];
   volunteers: Volunteer[];
   updates: VoiceUpdate[];

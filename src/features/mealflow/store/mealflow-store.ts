@@ -43,6 +43,8 @@ const updates: VoiceUpdate[] = [
 ];
 
 export const useMealFlowStore = create<MealFlowState>()(persist((set) => ({
+  onboardingComplete: false,
+  completeOnboarding: () => set({ onboardingComplete: true }),
   stops,
   volunteers,
   updates,
