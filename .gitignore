@@ -50,3 +50,6 @@ example
 
 # Agent tools
 .claude/
+backend/logs/
+.env
+backend/data/mealbridge_state.json

@@ -1,0 +1,59 @@
+name: MealBridge CI (Backend Security & Frontend Typecheck)
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend-security-tests:
+    name: Backend Pytest (RBAC, PII Guardrails & Audit Logs)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies and pytest
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt pytest
+
+      - name: Verify Python bytecode syntax
+        run: python -m compileall backend/
+
+      - name: Run pytest security & onboarding suite
+        run: pytest -v backend/tests/
+
+  frontend-typecheck:
+    name: Expo Frontend TypeScript Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile || bun install
+
+      - name: Run TypeScript typecheck
+        run: bun run typecheck
